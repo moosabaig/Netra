@@ -287,6 +287,7 @@ PAGE = r"""<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Netra Scanner</title>
+<link rel="icon" href="data:,">
 <style>
   :root {
     --bg: #0d1117; --panel: #161b22; --border: #30363d; --text: #e6edf3; --muted: #8b949e;
@@ -337,6 +338,8 @@ PAGE = r"""<!doctype html>
   td.port { font-weight: 700; color: var(--ok); }
   .empty { color: var(--muted); text-align: center; padding: 24px; }
   .tablewrap { max-height: 360px; overflow: auto; }
+  table.checks td:first-child { white-space: nowrap; }
+  @media (max-width: 640px) { table.checks td:first-child { white-space: normal; } }
   pre { margin: 0; max-height: 200px; overflow: auto; font: 12px/1.5 Consolas, "Cascadia Mono", monospace;
         white-space: pre-wrap; word-break: break-word; }
   .l-ok { color: var(--ok); } .l-err { color: var(--err); } .l-info { color: var(--accent); }
@@ -429,11 +432,11 @@ PAGE = r"""<!doctype html>
       <div class="grid3" style="grid-template-columns: 1fr 1fr;">
         <div class="field">
           <label for="timeout">Wait per port (s)</label>
-          <input id="timeout" type="number" min="0.05" max="10" step="0.1" value="0.5">
+          <input id="timeout" type="number" min="0.05" max="10" step="any" value="0.5">
         </div>
         <div class="field">
           <label for="workers">Threads</label>
-          <input id="workers" type="number" min="1" max="1000" step="10" value="200">
+          <input id="workers" type="number" min="1" max="1000" step="1" value="200">
         </div>
       </div>
     </details>
@@ -543,8 +546,8 @@ PAGE = r"""<!doctype html>
       </section>
       <section class="card" id="ssl-checks-card" hidden>
         <h2>Vulnerability checks</h2>
-        <div class="tablewrap">
-          <table>
+        <div class="tablewrap" style="max-height:none">
+          <table class="checks">
             <thead><tr><th>Check</th><th>Result</th><th>Detail</th></tr></thead>
             <tbody id="ssl-checks"></tbody>
           </table>
@@ -569,6 +572,11 @@ const $ = id => document.getElementById(id);
 let lastJob = null, job = null, openSeen = 0, logSeen = 0, results = [], timer = null, sortKey = null, sortDesc = false;
 
 $("preset").onchange = e => { if (e.target.value) $("ports").value = e.target.value; };
+// an invalid field inside the collapsed "Advanced" section would otherwise block submit silently
+$("form").addEventListener("invalid", e => {
+  const d = e.target.closest("details");
+  if (d) d.open = true;
+}, true);
 $("ports").oninput = () => { $("preset").value = ""; };
 
 function setRunning(on) {
@@ -903,7 +911,7 @@ fetch("/api/engines").then(r => r.json()).then(av => {
     const e = av[opt.value];
     if (e && !e.available) { opt.disabled = true; opt.textContent += " - not installed"; }
     if (opt.value === "testssl" && e && e.available)
-      opt.textContent = e.slow ? "testssl.sh (very slow here: 30-60 min)" : "testssl.sh (thorough, 2-3 min)";
+      opt.textContent = e.slow ? "testssl.sh (30-60 min)" : "testssl.sh (2-3 min)";
   }
   if ($("ssl-engine").selectedOptions[0].disabled) $("ssl-engine").value = "builtin";
   const showHint = () => {

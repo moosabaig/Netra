@@ -11,6 +11,22 @@ Results can be exported as CSV, JSON or a PDF report.
 
 > **Only scan hosts you own or are explicitly authorized to test.**
 
+## Screenshots
+
+**Port scan** – open ports appear live; each row has a one-click SSL scan.
+
+![Port scan tab](docs/screenshots/port-scan.png)
+
+**SSL/TLS scan** (testssl.sh engine) – grade, findings by severity and protocol support.
+
+![SSL/TLS scan overview](docs/screenshots/ssl-overview.png)
+
+**Vulnerability checks and certificate details**
+
+![Vulnerability checks and certificate](docs/screenshots/ssl-vulnerabilities.png)
+
+*Screenshots use [scanme.nmap.org](http://scanme.nmap.org/), which Nmap provides for scan testing, and example.com.*
+
 ## Quick start
 
 ```bash
