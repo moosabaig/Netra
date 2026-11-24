@@ -1,0 +1,4 @@
+# third-party scanners downloaded by setup_tools.py
+tools/
+__pycache__/
+*.pyc

@@ -1,0 +1,4 @@
+# All optional: Netra runs without them, with reduced features.
+fpdf2>=2.7        # PDF reports
+cryptography>=42  # detailed certificate info (key type/size, signature, fingerprint)
+termcolor>=2.0    # coloured CLI output
