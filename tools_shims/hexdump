@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Minimal hexdump replacement for testssl.sh where hexdump is missing (Git Bash, minimal
+# WSL distros). Needs only bash, od and awk.
+# Supports the forms testssl.sh uses:
+#   hexdump -v -e 'N/1 "<byte fmt>" ["<after-block fmt>"]' [file]
+#       e.g. '16/1 "%02X"', '11/1 "%02x,"', '16/1 "%02x " " \n"'
+#   hexdump -ve '<fmt>' [file]          (combined flags)
+#   hexdump -C [file]                   canonical-style dump (od) + final offset line
+mode=fmt fmt="" file=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -C) mode=canon ;;
+        -v) ;;
+        -e|-ve) shift; fmt="$1" ;;
+        -*) ;;
+        *)  file="$1" ;;
+    esac
+    shift
+done
+
+if [[ $mode == canon ]]; then
+    if [[ -n $file ]]; then data_file="$file"; else data_file=$(mktemp); cat > "$data_file"; fi
+    size=$(wc -c < "$data_file")
+    if [[ $size -gt 0 ]]; then
+        # same shape as hexdump -C: one line per 16 bytes + final offset line
+        od -Ax -v -tx1z "$data_file"
+    fi
+    [[ -z $file ]] && rm -f "$data_file"
+    exit 0
+fi
+
+re='^[[:space:]]*([0-9]+)/1[[:space:]]*"([^"]*)"([[:space:]]*"([^"]*)")?[[:space:]]*$'
+if [[ ! $fmt =~ $re ]]; then
+    echo "hexdump shim: unsupported format: $fmt" >&2
+    exit 1
+fi
+count="${BASH_REMATCH[1]}" byte_fmt="${BASH_REMATCH[2]}" block_fmt="${BASH_REMATCH[4]}"
+
+if [[ -n $file ]]; then src=(od -An -v -tu1 "$file"); else src=(od -An -v -tu1); fi
+"${src[@]}" | awk -v n="$count" -v f1="$byte_fmt" -v f2="$block_fmt" '
+    { for (i = 1; i <= NF; i++) { printf f1, $i; c++; if (f2 != "" && c % n == 0) printf "%s", f2 } }
+    END { if (f2 != "" && c % n != 0) printf "%s", f2 }'
